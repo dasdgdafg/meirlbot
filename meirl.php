@@ -1,5 +1,7 @@
 <?php
 
+include 'randomImage.php';
+
 // based on http://www.wikihow.com/Develop-an-IRC-Bot
 
 // config parameters
@@ -8,7 +10,8 @@ $port = 6697;
 $nickname = "meirlBot";
 $ident = "meirl";
 $gecos = "is this used for anything?";
-$channel = "";
+$channel = "#sadpanda";
+// $channel = "#testing751984351";
 
 // connect to the network
 $socket = stream_socket_client("$server:$port");
@@ -17,6 +20,13 @@ if ($socket === false)
     $errorCode = socket_last_error();
     $errorString = socket_strerror($errorCode);
     die("Error $errorCode: $errorString\n");
+}
+
+// close the socket if we die
+register_shutdown_function('shutdown');
+function shutdown()
+{
+    fclose($socket);
 }
 
 // send the registration info
@@ -64,14 +74,20 @@ while (is_resource($socket))
     
     // do stuff
     // :nick!ident@host PRIVMSG #channel :message
-    if ($d[2] == $channel)
+    if ($d[1] == "PRIVMSG")
     {
         $msg = implode(' ', array_slice($d, 3));
-        if (strpos($msg, 'me irl') !== false)
+        if (stripos($msg, 'me irl') !== false)
         {
-            $newMsg = "PRIVMSG " . $d[2] . " " . ":me irl http://pastebin.com/PgbpaJ4b" . "\r\n";
-            echo "sending message: ". $newMsg;
-            fwrite($socket, $newMsg);
+            $url = getImage();
+            if ($url !== false)
+            {
+                $startIndex = stripos($msg, 'me irl');
+                $meirlString = substr($msg, $startIndex, 6);
+                $newMsg = "PRIVMSG " . $d[2] . " " . ":$meirlSTring $url" . "\r\n";
+                echo "sending message: ". $newMsg;
+                fwrite($socket, $newMsg);
+            }
         }
     }
 }
