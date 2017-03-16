@@ -10,8 +10,6 @@ $port = 6697;
 $nickname = "meirlBot";
 $ident = "meirl";
 $gecos = "is this used for anything?";
-// $channel = "#sadpanda";
-// $channel = "#testing751984351";
 
 // connect to the network
 $socket = stream_socket_client("$server:$port");
@@ -72,7 +70,7 @@ while (is_resource($socket))
         // fwrite($socket, "JOIN $channel\r\n");
     }
     
-    // do stuff
+    // reply to messages
     // :nick!ident@host PRIVMSG #channel :message
     if ($d[1] == "PRIVMSG")
     {
@@ -96,6 +94,15 @@ while (is_resource($socket))
                 sendImage($socket, $sendTo, $msg);
             }
         }
+    }
+    
+    // join from invites
+    // :nick!ident@host INVITE nick :#channel
+    if ($d[1] == "INVITE" && $d[2] == $nickname)
+    {
+        $channel = substr($d[3], 1);
+        fwrite($socket, "JOIN $channel\r\n");
+        fwrite($socket, "PRIVMSG $channel :Me IRL Bot requested by " . substr($d[0], 1) . "\r\n");
     }
 }
 
