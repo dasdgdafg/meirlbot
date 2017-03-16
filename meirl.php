@@ -10,8 +10,8 @@ $port = 6697;
 $nickname = "meirlBot";
 $ident = "meirl";
 $gecos = "is this used for anything?";
-$channel = "#sadpanda";
-// $channel = "#testing751984351";
+// $channel = "#sadpanda";
+$channel = "#testing751984351";
 
 // connect to the network
 $socket = stream_socket_client("$server:$port");
@@ -74,7 +74,7 @@ while (is_resource($socket))
     
     // do stuff
     // :nick!ident@host PRIVMSG #channel :message
-    if ($d[1] == "PRIVMSG")
+    if ($d[1] == "PRIVMSG" && stripos($d[2], '#') !== false)
     {
         $msg = implode(' ', array_slice($d, 3));
         if (stripos($msg, 'me irl') !== false)
@@ -84,7 +84,25 @@ while (is_resource($socket))
             {
                 $startIndex = stripos($msg, 'me irl');
                 $meirlString = substr($msg, $startIndex, 6);
-                $newMsg = "PRIVMSG " . $d[2] . " " . ":$meirlSTring $url" . "\r\n";
+                $newMsg = "PRIVMSG " . $d[2] . " " . ":$meirlString $url" . "\r\n";
+                echo "sending message: ". $newMsg;
+                fwrite($socket, $newMsg);
+            }
+        }
+    }
+    else if ($d[1] == "PRIVMSG" && $d[2] == $nickname)
+    {
+        $msg = implode(' ', array_slice($d, 3));
+        $nickEndIndex = strpos($d[0], "!");
+        $otherNick = substr($d[0], 1, $nickEndIndex-1);
+        if (stripos($msg, 'me irl') !== false)
+        {
+            $url = getImage();
+            if ($url !== false)
+            {
+                $startIndex = stripos($msg, 'me irl');
+                $meirlString = substr($msg, $startIndex, 6);
+                $newMsg = "PRIVMSG " . $otherNick . " " . ":$meirlString $url" . "\r\n";
                 echo "sending message: ". $newMsg;
                 fwrite($socket, $newMsg);
             }
