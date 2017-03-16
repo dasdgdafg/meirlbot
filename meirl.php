@@ -11,7 +11,7 @@ $nickname = "meirlBot";
 $ident = "meirl";
 $gecos = "is this used for anything?";
 // $channel = "#sadpanda";
-$channel = "#testing751984351";
+// $channel = "#testing751984351";
 
 // connect to the network
 $socket = stream_socket_client("$server:$port");
@@ -69,45 +69,46 @@ while (is_resource($socket))
     // join the channel after MOTD ends
     if ($d[1] === '376' || $d[1] === '422')
     {
-        fwrite($socket, "JOIN $channel\r\n");
+        // fwrite($socket, "JOIN $channel\r\n");
     }
     
     // do stuff
     // :nick!ident@host PRIVMSG #channel :message
-    if ($d[1] == "PRIVMSG" && stripos($d[2], '#') !== false)
+    if ($d[1] == "PRIVMSG")
     {
         $msg = implode(' ', array_slice($d, 3));
         if (stripos($msg, 'me irl') !== false)
         {
-            $url = getImage();
-            if ($url !== false)
+            // reply to the channel or to a pm
+            $sendTo = false;
+            if (stripos($d[2], '#') !== false)
             {
-                $startIndex = stripos($msg, 'me irl');
-                $meirlString = substr($msg, $startIndex, 6);
-                $newMsg = "PRIVMSG " . $d[2] . " " . ":$meirlString $url" . "\r\n";
-                echo "sending message: ". $newMsg;
-                fwrite($socket, $newMsg);
+                $sendTo = $d[2];
             }
-        }
-    }
-    else if ($d[1] == "PRIVMSG" && $d[2] == $nickname)
-    {
-        $msg = implode(' ', array_slice($d, 3));
-        $nickEndIndex = strpos($d[0], "!");
-        $otherNick = substr($d[0], 1, $nickEndIndex-1);
-        if (stripos($msg, 'me irl') !== false)
-        {
-            $url = getImage();
-            if ($url !== false)
+            else if ($d[2] == $nickname)
             {
-                $startIndex = stripos($msg, 'me irl');
-                $meirlString = substr($msg, $startIndex, 6);
-                $newMsg = "PRIVMSG " . $otherNick . " " . ":$meirlString $url" . "\r\n";
-                echo "sending message: ". $newMsg;
-                fwrite($socket, $newMsg);
+                $nickEndIndex = strpos($d[0], "!");
+                $sendTo = substr($d[0], 1, $nickEndIndex-1);
+            }
+            
+            if ($sendTo !== false)
+            {
+                sendImage($socket, $sendTo, $msg);
             }
         }
     }
 }
 
+function sendImage($socket, $to, $msg)
+{
+    $url = getImage();
+    if ($url !== false)
+    {
+        $startIndex = stripos($msg, 'me irl');
+        $meirlString = substr($msg, $startIndex, 6);
+        $newMsg = "PRIVMSG " . $to . " " . ":$meirlString $url" . "\r\n";
+        echo "sending message: ". $newMsg;
+        fwrite($socket, $newMsg);
+    }
+}
 ?>
