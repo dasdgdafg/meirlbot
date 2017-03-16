@@ -31,6 +31,8 @@ function shutdown()
 echo fwrite($socket, "NICK $nickname\r\n") . "\n";
 echo fwrite($socket, "USER $ident * 8 :$gecos\r\n") . "\n";
 
+$cooldown = [];
+
 // loop until the socket closes
 while (is_resource($socket))
 {
@@ -75,23 +77,35 @@ while (is_resource($socket))
     if ($d[1] == "PRIVMSG")
     {
         $msg = implode(' ', array_slice($d, 3));
+        $nickEndIndex = strpos($d[0], "!");
+        $otherNick = substr($d[0], 1, $nickEndIndex-1);
         if (stripos($msg, 'me irl') !== false)
         {
             // reply to the channel or to a pm
             $sendTo = false;
-            if (stripos($d[2], '#') !== false)
+            if (stripos($d[2], '#') !== false && $cooldown[$d[2]][$otherNick] == null)
             {
                 $sendTo = $d[2];
+                $cooldown[$d[2]][$otherNick] = 5;
+                echo "cd for $otherNick is " . $cooldown[$d[2]][$otherNick] . "\n";
             }
             else if ($d[2] == $nickname)
             {
-                $nickEndIndex = strpos($d[0], "!");
-                $sendTo = substr($d[0], 1, $nickEndIndex-1);
+                $sendTo = $otherNick;
             }
             
             if ($sendTo !== false)
             {
                 sendImage($socket, $sendTo, $msg);
+            }
+        }
+        else if ($cooldown[$d[2]][$otherNick] !== null)
+        {
+            $cooldown[$d[2]][$otherNick] -= 1;
+            echo "cd for $otherNick is " . $cooldown[$d[2]][$otherNick] . "\n";
+            if ($cooldown[$d[2]][$otherNick] == 0)
+            {
+                $cooldown[$d[2]][$otherNick] = null;
             }
         }
     }
