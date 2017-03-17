@@ -1,7 +1,8 @@
 <?php
 
-include 'randomImage.php';
-include 'logging.php';
+include_once 'randomImage.php';
+include_once 'logging.php';
+include_once 'state.php';
 
 // originally based on http://www.wikihow.com/Develop-an-IRC-Bot
 
@@ -10,7 +11,7 @@ $server = "ssl://irc.rizon.net";
 $port = 6697;
 $nickname = "meirlBot";
 $ident = "meirl";
-$gecos = "is this used for anything?";
+$gecos = "a bot to post pics of yourself irl";
 
 // connect to the network
 $socket = stream_socket_client("$server:$port");
@@ -48,7 +49,7 @@ while (is_resource($socket))
     $data = trim($data);
     if (strlen($data) > 0)
     {
-        logMessage($data . "\n", false);
+        logMessage($data, false);
     }
     if (feof($socket))
     {
@@ -68,10 +69,19 @@ while (is_resource($socket))
         continue; // nothing else to do with a ping
     }
     
-    // join the channel after MOTD ends
+    // join channels after MOTD ends
     if ($d[1] === '376' || $d[1] === '422')
     {
-        // fwrite($socket, "JOIN $channel\r\n");
+        $channels = State::getChannels();
+        foreach ($channels as $channel)
+        {
+            if (strlen($channel) > 1)
+            {
+                logMessage("joining $channel");
+                fwrite($socket, "JOIN $channel\r\n");
+            }
+        }
+        echo "ready\n";
     }
     
     // reply to messages
@@ -89,7 +99,7 @@ while (is_resource($socket))
             {
                 $sendTo = $d[2];
                 $cooldown[$d[2]][$otherNick] = 5;
-                logMessage("cd for $otherNick is " . $cooldown[$d[2]][$otherNick] . "\n");
+                logMessage("cd for $otherNick is " . $cooldown[$d[2]][$otherNick]);
             }
             else if ($d[2] == $nickname)
             {
@@ -102,10 +112,10 @@ while (is_resource($socket))
                 continue; // make sure we don't send multiple things due to one line
             }
         }
-        else if ($cooldown[$d[2]][$otherNick] !== null)
+        else if (@$cooldown[$d[2]][$otherNick] !== null)
         {
             $cooldown[$d[2]][$otherNick] -= 1;
-            logMessage("cd for $otherNick is " . $cooldown[$d[2]][$otherNick] . "\n");
+            logMessage("cd for $otherNick is " . $cooldown[$d[2]][$otherNick]);
             if ($cooldown[$d[2]][$otherNick] == 0)
             {
                 $cooldown[$d[2]][$otherNick] = null;
@@ -121,6 +131,7 @@ while (is_resource($socket))
         logMessage("joining $channel, invited by " . $d[0]);
         fwrite($socket, "JOIN $channel\r\n");
         fwrite($socket, "PRIVMSG $channel :Me IRL Bot requested by " . substr($d[0], 1) . "\r\n");
+        State::addChannel($channel);
         continue;
     }
     
@@ -128,7 +139,16 @@ while (is_resource($socket))
     // :nick!ident@host KICK #channel nick :message
     if ($d[1] == "KICK" && $d[3] == $nickname)
     {
-        logMessage("kicked from " . $d[2] . " by " . $d[0] . " because " . $d[4] . "\n");
+        logMessage("kicked from " . $d[2] . " by " . $d[0] . " because " . $d[4]);
+        State::removeChannel($d[2]);
+    }
+    
+    // we're banned from this channel
+    // :server 474 nick channel :Cannot join channel (+b)
+    if ($d[1] == "474" && $d[2] = $nickname)
+    {
+        logMessage("banned from " . $d[3]);
+        State::removeChannel($d[3]);
     }
 }
 
