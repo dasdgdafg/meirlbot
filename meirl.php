@@ -95,7 +95,7 @@ while (is_resource($socket))
         {
             // reply to the channel or to a pm
             $sendTo = false;
-            if (stripos($d[2], '#') !== false && $cooldown[$d[2]][$otherNick] == null)
+            if (stripos($d[2], '#') !== false && @$cooldown[$d[2]][$otherNick] == null)
             {
                 $sendTo = $d[2];
                 $cooldown[$d[2]][$otherNick] = 5;
