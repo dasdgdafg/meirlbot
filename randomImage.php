@@ -1,11 +1,13 @@
 <?php
 
+include 'logging.php';
+
 function getImage()
 {
     $limit = 20;
     $pageOffset = rand(0, 30000/$limit);
     $url = "https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=$limit&tags=loli+solo&pid=$pageOffset";
-    echo "getting image from: $url\n";
+    logMessage("getting image from: $url\n");
     $options = array(
         'http' => array(
             'method'  => 'GET',
