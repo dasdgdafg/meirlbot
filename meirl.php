@@ -12,6 +12,7 @@ $port = 6697;
 $nickname = "meirlBot";
 $ident = "meirl";
 $gecos = "a bot to post pics of yourself irl";
+$password = file_get_contents("password.txt");
 
 // connect to the network
 $socket = stream_socket_client("$server:$port");
@@ -34,6 +35,7 @@ echo fwrite($socket, "NICK $nickname\r\n") . "\n";
 echo fwrite($socket, "USER $ident * 8 :$gecos\r\n") . "\n";
 
 $cooldown = [];
+$joinedChannels = false;
 
 // loop until the socket closes
 while (is_resource($socket))
@@ -70,18 +72,32 @@ while (is_resource($socket))
     }
     
     // join channels after MOTD ends
+    // :server 376 nick :End of /MOTD command.
     if ($d[1] === '376' || $d[1] === '422')
     {
-        $channels = State::getChannels();
-        foreach ($channels as $channel)
+        logMessage("identifying");
+        fwrite($socket, "PRIVMSG nickserv :identify $password\r\n");
+        
+    }
+    
+    // join channels after vhost is set
+    //:server 396 nick host :is now your visible host
+    if ($d[1] == "396" && $d[2] == $nickname)
+    {
+        if ($joinedChannels == false)
         {
-            if (strlen($channel) > 1)
+            $channels = State::getChannels();
+            foreach ($channels as $channel)
             {
-                logMessage("joining $channel");
-                fwrite($socket, "JOIN $channel\r\n");
+                if (strlen($channel) > 1)
+                {
+                    logMessage("joining $channel");
+                    fwrite($socket, "JOIN $channel\r\n");
+                }
             }
+            echo "ready\n";
+            $joinedChannels = true;
         }
-        echo "ready\n";
     }
     
     // reply to messages
@@ -130,7 +146,7 @@ while (is_resource($socket))
         $channel = substr($d[3], 1);
         logMessage("joining $channel, invited by " . $d[0]);
         fwrite($socket, "JOIN $channel\r\n");
-        fwrite($socket, "PRIVMSG $channel :Me IRL Bot requested by " . substr($d[0], 1) . "\r\n");
+        // fwrite($socket, "PRIVMSG $channel :Me IRL Bot requested by " . substr($d[0], 1) . "\r\n");
         State::addChannel($channel);
         continue;
     }
