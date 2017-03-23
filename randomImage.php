@@ -4,9 +4,9 @@ include_once 'logging.php';
 
 function getImage()
 {
-    $limit = 20;
-    $pageOffset = rand(0, 30000/$limit);
-    $url = "https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=$limit&tags=loli+solo&pid=$pageOffset";
+    $limit = 1;
+    $pageOffset = rand(0, 10000/$limit);
+    $url = "https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=$limit&tags=loli+solo+rating:questionable+score:>5&pid=$pageOffset";
     logMessage("getting image from: $url");
     $options = array(
         'http' => array(
@@ -20,21 +20,7 @@ function getImage()
         return false;
     }
 
-    $possible = [];
     $doc = simplexml_load_string($result);
-    foreach ($doc->post as $post)
-    {
-        // find the urls for each 'questionable' image
-        if ($post["rating"] == "q")
-        {
-            array_push($possible, "https:" . (string) $post["file_url"]);
-        }
-    }
-    if (count($possible) == 0)
-    {
-        return false;
-    }
-
-    return $possible[array_rand($possible)];
+    return "https:" . (string) $doc->post[0]["file_url"];
 }
 ?>

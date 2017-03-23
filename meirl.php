@@ -71,13 +71,12 @@ while (is_resource($socket))
         continue; // nothing else to do with a ping
     }
     
-    // join channels after MOTD ends
+    // identify after MOTD ends
     // :server 376 nick :End of /MOTD command.
     if ($d[1] === '376' || $d[1] === '422')
     {
         logMessage("identifying");
         fwrite($socket, "PRIVMSG nickserv :identify $password\r\n");
-        
     }
     
     // join channels after vhost is set
