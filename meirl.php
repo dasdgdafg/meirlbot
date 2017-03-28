@@ -106,7 +106,7 @@ while (is_resource($socket))
         $msg = implode(' ', array_slice($d, 3));
         $nickEndIndex = strpos($d[0], "!");
         $otherNick = substr($d[0], 1, $nickEndIndex-1);
-        if (stripos($msg, 'me irl') !== false)
+        if (checkImageType($msg) !== false)
         {
             // reply to the channel or to a pm
             $sendTo = false;
@@ -169,11 +169,10 @@ while (is_resource($socket))
 
 function sendImage($socket, $to, $msg)
 {
-    $url = getImage();
+    $url = getImageForMessage($msg);
     if ($url !== false)
     {
-        $startIndex = stripos($msg, 'me irl');
-        $meirlString = substr($msg, $startIndex, 6);
+        $meirlString = getMatchingString($msg);
         $newMsg = "PRIVMSG " . $to . " " . ":$meirlString $url" . "\r\n";
         logMessage("sending image: ". $newMsg);
         fwrite($socket, $newMsg);
