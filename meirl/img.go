@@ -80,5 +80,5 @@ func (c CuteImage) getImage(count int, tags string) string {
         log.Println("error getting image")
         return ""
     }
-    return respBody.Posts[0].File
+    return "https:" + respBody.Posts[0].File
 }
