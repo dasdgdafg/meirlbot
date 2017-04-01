@@ -17,9 +17,9 @@ import (
 // const server = "chat.freenode.net"
 const server = "irc.rizon.net"
 const port = "6697"
-const nickname = "testBot"
-const ident = "test"
-const realname = "testBot v 1.0"
+const nickname = "meirlBot"
+const ident = "meirl"
+const realname = "a bot to post pic of yourself irl"
 var passwordBytes, _ = ioutil.ReadFile("password.txt")
 var password = string(passwordBytes)
 
