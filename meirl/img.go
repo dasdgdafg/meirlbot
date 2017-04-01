@@ -32,7 +32,7 @@ var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)(me irl)"),
 var tags = []string{"loli solo score:>5 rating:questionable",
                     "loli multiple_girls score:>5 rating:questionable -large_breasts -1boy -multiple_boys",
                     "loli solo score:>5 masturbation"}
-var counts = []int{10000, 3500, 0}
+var counts = []int{10000, 3500, 1500}
 
 // returns (matching string, image url)
 func (c CuteImage) getImageForMessage(msg string) (string, string) {

@@ -12,9 +12,9 @@ import (
     "os"
     "strconv"
     "ircbot/state"
+    "rand"
 )
 
-// const server = "chat.freenode.net"
 const server = "irc.rizon.net"
 const port = "6697"
 const nickname = "meirlBot"
@@ -41,6 +41,8 @@ func main() {
     
     t := time.Now()
     ts := t.Format("Jan 2 2006 15-04-05 EDT")
+    
+    rand.Seed( time.Now().UTC().UnixNano())
     
     logFilename := "logs/" + ts + ".txt"
     f, err := os.Create(logFilename)
