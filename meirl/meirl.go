@@ -63,8 +63,8 @@ func main() {
     log.Println("socket connected")
     
     errors := make(chan bool)
-    linesToSend := make(chan string)
-    dbWrites := make(chan dbOp)
+    linesToSend := make(chan string, 5)
+    dbWrites := make(chan dbOp, 2)
     go readLines(socket, errors, linesToSend, fileOnlyLogger, dbWrites)
     go writeLines(socket, errors, linesToSend, fileOnlyLogger)
     go manualInput(linesToSend)
@@ -103,8 +103,9 @@ func readLines(socket net.Conn, errors chan<- bool, linesToSend chan<- string, l
     for {
         line, err := reader.ReadString('\n')
         if err != nil {
-            log.Fatalln(err)
+            log.Println(err)
             errors <- true
+            continue
         }
         // remove the trailing \r\n
         line = line[:len(line)-2]
@@ -120,8 +121,9 @@ func writeLines(socket net.Conn, errors chan<- bool, linesToSend <-chan string, 
         logFile.Println("<<< " + line) // only print these to the log file, not to the default logger
         _, err := writer.WriteString(line + "\n")
         if err != nil {
-            log.Fatalln(err)
+            log.Println(err)
             errors <- true
+            continue
         }
         // make sure it actually gets sent
         writer.Flush()
