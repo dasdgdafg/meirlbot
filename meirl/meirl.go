@@ -12,7 +12,7 @@ import (
     "os"
     "strconv"
     "ircbot/state"
-    "rand"
+    "math/rand"
 )
 
 const server = "irc.rizon.net"
