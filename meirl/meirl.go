@@ -106,7 +106,7 @@ func readLines(socket net.Conn, errors chan<- bool, linesToSend chan<- string, l
 		if err != nil {
 			log.Println(err)
 			errors <- true
-			continue
+			return
 		}
 		// remove the trailing \r\n
 		line = line[:len(line)-2]
@@ -124,7 +124,7 @@ func writeLines(socket net.Conn, errors chan<- bool, linesToSend <-chan string, 
 		if err != nil {
 			log.Println(err)
 			errors <- true
-			continue
+			return
 		}
 		// make sure it actually gets sent
 		writer.Flush()
