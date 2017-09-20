@@ -4,7 +4,9 @@ import (
 	"github.com/dasdgdafg/ircFramework"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"strconv"
+	"time"
 )
 
 const server = "irc.rizon.net"
@@ -17,6 +19,8 @@ var passwordBytes, _ = ioutil.ReadFile("password.txt")
 var password = string(passwordBytes)
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	bot := ircFramework.IRCBot{Server: server,
 		Port:           port,
 		Nickname:       nickname,
@@ -47,7 +51,7 @@ func processPrivmsg(linesToSend chan<- string, nick string, channel string, msg 
 		}
 
 		if sendTo != "" {
-			go sendImage(linesToSend, sendTo, msg, cuteImage)
+			go sendImage(linesToSend, sendTo, msg, nick, cuteImage)
 		}
 	} else if cooldown[chanNick] != 0 {
 		cooldown[chanNick] -= 1
@@ -58,8 +62,8 @@ func processPrivmsg(linesToSend chan<- string, nick string, channel string, msg 
 	}
 }
 
-func sendImage(linesToSend chan<- string, sendTo string, msg string, img CuteImage) {
-	str, url := img.getImageForMessage(msg)
+func sendImage(linesToSend chan<- string, sendTo string, msg string, nick string, img CuteImage) {
+	str, url := img.getImageForMessage(msg, nick)
 	if url != "" {
 		newMsg := "PRIVMSG " + sendTo + " " + ":" + str + " " + url
 		log.Println("sending image: " + newMsg)

@@ -25,10 +25,10 @@ type post struct {
 
 const baseUrl = "https://gelbooru.com/index.php?page=dapi&s=post&q=index&tags="
 
-var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)(me irl)"),
-	regexp.MustCompile("(?i)(me on the (?:left|right))"),
-	regexp.MustCompile("(?i)(me being lewd)"),
-	regexp.MustCompile("(?i)(me with tags) (.*)")}
+var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)me( irl)"),
+	regexp.MustCompile("(?i)me( on the (?:left|right))"),
+	regexp.MustCompile("(?i)me( being lewd)"),
+	regexp.MustCompile("(?i)me( with tags) (.*)")}
 
 // these must match the order of the regexes
 var tags = []string{"loli solo score:>5 rating:questionable",
@@ -40,7 +40,7 @@ var tags = []string{"loli solo score:>5 rating:questionable",
 var counts = []int{10000, 3500, 1500, 0}
 
 // returns (matching string, image url)
-func (c CuteImage) getImageForMessage(msg string) (string, string) {
+func (c CuteImage) getImageForMessage(msg string, nick string) (string, string) {
 	for i, reg := range regexes {
 		if reg.MatchString(msg) {
 			matches := reg.FindStringSubmatch(msg)
@@ -52,7 +52,7 @@ func (c CuteImage) getImageForMessage(msg string) (string, string) {
 			} else {
 				imageUrl = c.getImage(counts[i], tags[i])
 			}
-			return matchingString, imageUrl
+			return nick + matchingString, imageUrl
 		}
 	}
 	log.Println("error determining image type for " + msg)
