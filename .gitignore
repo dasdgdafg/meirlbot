@@ -1,4 +1,4 @@
-meirl/logs
-meirl/password.txt
-meirl/state_*.txt
+logs
+password.txt
+*.state
 *.exe
