@@ -3,10 +3,8 @@ package main
 import (
 	"encoding/xml"
 	"log"
-	"math/rand"
 	"net/http"
 	"regexp"
-	"strconv"
 )
 
 type CuteImage struct {
@@ -23,7 +21,7 @@ type post struct {
 	File string `xml:"file_url,attr"`
 }
 
-const baseUrl = "https://gelbooru.com/index.php?page=dapi&s=post&q=index&tags="
+const baseUrl = "https://lolibooru.moe/post/index.xml?tags="
 
 var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)me( irl)"),
 	regexp.MustCompile("(?i)me( on the (?:left|right))"),
@@ -31,13 +29,10 @@ var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)me( irl)"),
 	regexp.MustCompile("(?i)me( with tags) (.*)")}
 
 // these must match the order of the regexes
-var tags = []string{"loli solo score:>5 rating:questionable",
-	"loli multiple_girls score:>5 rating:questionable -large_breasts -1boy -multiple_boys",
-	"loli solo score:>5 masturbation",
+var tags = []string{"solo score:>2 rating:questionable order:random -photorealistic -3dcg -flash",
+	"multiple_girls score:>0 rating:questionable order:random -large_breasts -1boy -multiple_boys -photorealistic -3dcg -flash",
+	"solo masturbation order:random -photorealistic -3dcg -flash",
 	""}
-
-// to avoid looking up the count each time. it would be better to get these once and cache instead of hard coding
-var counts = []int{10000, 3500, 1500, 0}
 
 // returns (matching string, image url)
 func (c CuteImage) getImageForMessage(msg string, nick string) (string, string) {
@@ -48,9 +43,9 @@ func (c CuteImage) getImageForMessage(msg string, nick string) (string, string) 
 			imageUrl := ""
 			// use matches[2] (user specified tags) if there are no tags
 			if tags[i] == "" && len(matches) > 2 {
-				imageUrl = c.getImage(counts[i], matches[2])
+				imageUrl = c.getImage(matches[2])
 			} else {
-				imageUrl = c.getImage(counts[i], tags[i])
+				imageUrl = c.getImage(tags[i])
 			}
 			return nick + matchingString, imageUrl
 		}
@@ -68,16 +63,8 @@ func (c CuteImage) checkForMatch(msg string) bool {
 	return false
 }
 
-func (c CuteImage) getImage(count int, tags string) string {
-	// fetch the count if we don't have it
-	if count < 1 {
-		count = c.getCount(tags)
-		if count < 1 {
-			return ""
-		}
-	}
-	pid := rand.Intn(count)
-	requestUrl := baseUrl + tags + "&limit=1&pid=" + strconv.Itoa(pid)
+func (c CuteImage) getImage(tags string) string {
+	requestUrl := baseUrl + tags + "&limit=1"
 	log.Println("getting image from " + requestUrl)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
@@ -97,26 +84,5 @@ func (c CuteImage) getImage(count int, tags string) string {
 		log.Println("error getting image")
 		return ""
 	}
-	return "https:" + respBody.Posts[0].File
-}
-
-func (c CuteImage) getCount(tags string) int {
-	requestUrl := baseUrl + tags + "&limit=0"
-	log.Println("getting count from " + requestUrl)
-	resp, err := http.Get(requestUrl)
-	if err != nil {
-		log.Println("error fetching count")
-		log.Println(err)
-		return 0
-	}
-	defer resp.Body.Close()
-	respBody := response{}
-	err = xml.NewDecoder(resp.Body).Decode(&respBody)
-	if err != nil {
-		log.Println("error decoding response")
-		log.Println(err)
-		return 0
-	}
-	result, _ := strconv.Atoi(respBody.Count)
-	return result
+	return respBody.Posts[0].File
 }
