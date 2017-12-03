@@ -85,6 +85,13 @@ func (c CuteImage) getImage(tags string) string {
 		log.Println("error getting image")
 		return ""
 	}
-	// encode the result so it will be clickable in IRC clients, since the urls have spaces in them
-	return url.QueryEscape(respBody.Posts[0].File)
+	// escape the result so it will be clickable in IRC clients, since the urls have spaces in them
+	resultUrl, err := url.Parse(respBody.Posts[0].File)
+	if err != nil {
+		log.Println("invalid file url")
+		log.Println(respBody.Posts[0].File)
+		log.Println(err)
+		return ""
+	}
+	return resultUrl.String()
 }
