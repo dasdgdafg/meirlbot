@@ -24,6 +24,8 @@ type post struct {
 
 const baseUrl = "https://lolibooru.moe/post/index.xml?tags="
 
+var urlShortener = regexp.MustCompile("^(.*)/[^/^\\.]+(\\.[^/]+)$")
+
 var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)me( irl)"),
 	regexp.MustCompile("(?i)me( on the (?:left|right))"),
 	regexp.MustCompile("(?i)me( being lewd)"),
@@ -93,5 +95,12 @@ func (c CuteImage) getImage(tags string) string {
 		log.Println(err)
 		return ""
 	}
-	return resultUrl.String()
+	// try removing some unneeded info from the URL, since lolibooru's urls are very long by default
+	url := resultUrl.String()
+	if urlShortener.MatchString(url) {
+		matches := urlShortener.FindStringSubmatch(url)
+		return matches[1] + matches[2]
+	} else {
+		return url
+	}
 }
