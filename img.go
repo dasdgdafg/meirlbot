@@ -32,10 +32,13 @@ var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)me( irl)"),
 	regexp.MustCompile("(?i)me( with tags) (.*)")}
 
 // these must match the order of the regexes
-var tags = []string{"solo score:>2 rating:questionable order:random -photorealistic -3dcg -flash",
-	"multiple_girls score:>0 rating:questionable order:random -large_breasts -1boy -multiple_boys -photorealistic -3dcg -flash",
-	"solo masturbation order:random -photorealistic -3dcg -flash",
+var tags = []string{"solo score:>2 rating:questionable",
+	"multiple_girls score:>0 rating:questionable -large_breasts -1boy -multiple_boys",
+	"solo masturbation",
 	""}
+
+// these tags are always included in searches
+var alwaysTags = "order:random -photorealistic -3dcg -flash -photo"
 
 // returns (matching string, image url)
 func (c CuteImage) getImageForMessage(msg string, nick string) (string, string) {
@@ -67,7 +70,7 @@ func (c CuteImage) checkForMatch(msg string) bool {
 }
 
 func (c CuteImage) getImage(tags string) string {
-	requestUrl := baseUrl + url.QueryEscape(tags) + "&limit=1"
+	requestUrl := baseUrl + url.QueryEscape(tags+" "+alwaysTags) + "&limit=1"
 	log.Println("getting image from " + requestUrl)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
