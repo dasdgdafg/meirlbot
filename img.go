@@ -108,7 +108,7 @@ func (c CuteImage) getImage(count int, tags string) string {
 }
 
 func (c CuteImage) getCount(tags string) int {
-	requestUrl := baseUrl + tags + "&limit=0"
+	requestUrl := baseUrl + url.QueryEscape(tags+" "+alwaysTags) + "&limit=0"
 	log.Println("getting count from " + requestUrl)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
