@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"strconv"
 	"time"
 )
 
@@ -42,9 +41,9 @@ func processPrivmsg(linesToSend chan<- string, nick string, channel string, msg 
 		// reply to the channel or to a pm
 		sendTo := ""
 		if channel[:1] == "#" {
-            lastPost := cooldown[chanNick]
-            since := time.Since(lastPost)
-			if since >= 5 * time.Minute {
+			lastPost := cooldown[chanNick]
+			since := time.Since(lastPost)
+			if since >= 5*time.Minute {
 				sendTo = channel
 				cooldown[chanNick] = time.Now()
 			} else {

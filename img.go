@@ -104,7 +104,7 @@ func (c CuteImage) getImage(count int, tags string) string {
 		return ""
 	}
 
-	return "https:" + respBody.Posts[0].File
+	return respBody.Posts[0].File
 }
 
 func (c CuteImage) getCount(tags string) int {
