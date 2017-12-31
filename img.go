@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/xml"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 )
 
 type CuteImage struct {
@@ -22,7 +24,7 @@ type post struct {
 	File string `xml:"file_url,attr"`
 }
 
-const baseUrl = "https://lolibooru.moe/post/index.xml?tags="
+const baseUrl = "https://gelbooru.com/index.php?page=dapi&s=post&q=index&tags="
 
 var urlShortener = regexp.MustCompile("^(.*)/[^/^\\.]+(\\.[^/]+)$")
 
@@ -32,13 +34,16 @@ var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)me( irl)"),
 	regexp.MustCompile("(?i)me( with tags) (.*)")}
 
 // these must match the order of the regexes
-var tags = []string{"solo score:>2 rating:questionable",
-	"multiple_girls score:>0 rating:questionable -large_breasts -1boy -multiple_boys",
-	"solo masturbation",
+var tags = []string{"solo score:>5 rating:questionable",
+	"multiple_girls score:>5 rating:questionable -large_breasts -1boy -multiple_boys",
+	"solo score:>5 masturbation",
 	""}
 
 // these tags are always included in searches
-var alwaysTags = "order:random -photorealistic -3dcg -flash -photo"
+var alwaysTags = "loli"
+
+// to avoid looking up the count each time. it would be better to get these once and cache instead of hard coding
+var counts = []int{10000, 3500, 1500, 0}
 
 // returns (matching string, image url)
 func (c CuteImage) getImageForMessage(msg string, nick string) (string, string) {
@@ -49,9 +54,9 @@ func (c CuteImage) getImageForMessage(msg string, nick string) (string, string) 
 			imageUrl := ""
 			// use matches[2] (user specified tags) if there are no tags
 			if tags[i] == "" && len(matches) > 2 {
-				imageUrl = c.getImage(matches[2])
+				imageUrl = c.getImage(counts[i], matches[2])
 			} else {
-				imageUrl = c.getImage(tags[i])
+				imageUrl = c.getImage(counts[i], tags[i])
 			}
 			return nick + matchingString, imageUrl
 		}
@@ -69,8 +74,16 @@ func (c CuteImage) checkForMatch(msg string) bool {
 	return false
 }
 
-func (c CuteImage) getImage(tags string) string {
-	requestUrl := baseUrl + url.QueryEscape(tags+" "+alwaysTags) + "&limit=1"
+func (c CuteImage) getImage(count int, tags string) string {
+	// fetch the count if we don't have it
+	if count < 1 {
+		count = c.getCount(tags)
+		if count < 1 {
+			return ""
+		}
+	}
+	pid := rand.Intn(count)
+	requestUrl := baseUrl + url.QueryEscape(tags+" "+alwaysTags) + "&limit=1&pid=" + strconv.Itoa(pid)
 	log.Println("getting image from " + requestUrl)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
@@ -90,20 +103,27 @@ func (c CuteImage) getImage(tags string) string {
 		log.Println("error getting image")
 		return ""
 	}
-	// escape the result so it will be clickable in IRC clients, since the urls have spaces in them
-	resultUrl, err := url.Parse(respBody.Posts[0].File)
+
+	return "https:" + respBody.Posts[0].File
+}
+
+func (c CuteImage) getCount(tags string) int {
+	requestUrl := baseUrl + tags + "&limit=0"
+	log.Println("getting count from " + requestUrl)
+	resp, err := http.Get(requestUrl)
 	if err != nil {
-		log.Println("invalid file url")
-		log.Println(respBody.Posts[0].File)
+		log.Println("error fetching count")
 		log.Println(err)
-		return ""
+		return 0
 	}
-	// try removing some unneeded info from the URL, since lolibooru's urls are very long by default
-	url := resultUrl.String()
-	if urlShortener.MatchString(url) {
-		matches := urlShortener.FindStringSubmatch(url)
-		return matches[1] + matches[2]
-	} else {
-		return url
+	defer resp.Body.Close()
+	respBody := response{}
+	err = xml.NewDecoder(resp.Body).Decode(&respBody)
+	if err != nil {
+		log.Println("error decoding response")
+		log.Println(err)
+		return 0
 	}
+	result, _ := strconv.Atoi(respBody.Count)
+	return result
 }
