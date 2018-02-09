@@ -43,7 +43,7 @@ func processPrivmsg(linesToSend chan<- string, nick string, channel string, msg 
 		if channel[:1] == "#" {
 			lastPost := cooldown[chanNick]
 			since := time.Since(lastPost)
-			if since >= 5*time.Minute {
+			if since >= 5*time.Minute || true {
 				sendTo = channel
 				cooldown[chanNick] = time.Now()
 			} else {
@@ -63,14 +63,15 @@ func processPrivmsg(linesToSend chan<- string, nick string, channel string, msg 
 }
 
 func sendImage(linesToSend chan<- string, sendTo string, msg string, nick string, img CuteImage) {
-	str, url := img.getImageForMessage(msg, nick)
-	if url == "" {
-		newMsg := "PRIVMSG " + sendTo + " " + ":couldn't find any images"
-		log.Println("sending message: " + newMsg)
-		linesToSend <- newMsg
+	str, url, err := img.getImageForMessage(msg, nick)
+	var newMsg string
+	if err != nil {
+		newMsg = "PRIVMSG " + sendTo + " " + ":error fetching image"
+	} else if url == "" {
+		newMsg = "PRIVMSG " + sendTo + " " + ":couldn't find any images"
 	} else {
-		newMsg := "PRIVMSG " + sendTo + " " + ":" + str + " " + url
-		log.Println("sending image: " + newMsg)
-		linesToSend <- newMsg
+		newMsg = "PRIVMSG " + sendTo + " " + ":" + str + " " + url
 	}
+	log.Println("sending message: " + newMsg)
+	linesToSend <- newMsg
 }
