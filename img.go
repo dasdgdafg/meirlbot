@@ -36,7 +36,7 @@ var baseStrings = []string{"(?i)_m_e(_ _i_r_l_)_",
 	"(?i)_m_e(_ _w_i_t_h_ _t_a_g_s_) (.+)"}
 
 // color codes (or bold/italics)
-var colors = "(?:\\d{0,2}(,\\d{1,2})?||)*"
+var colors = "(?:\\d{0,2}(?:,\\d{1,2})?||)*"
 var colorsReg = regexp.MustCompile(colors)
 
 var regexes = []*regexp.Regexp{regexp.MustCompile(strings.Replace(baseStrings[0], "_", colors, -1)),
@@ -57,7 +57,7 @@ var alwaysTags = "loli"
 var counts = []int{10000, 3500, 1500, 0}
 
 // returns (matching string, image url)
-func (c CuteImage) getImageForMessage(msg string) (string, string, error) {
+func (c CuteImage) getImageForMessage(msg string, nick string) (string, string, error) {
 	for i, reg := range regexes {
 		if reg.MatchString(msg) {
 			matches := reg.FindStringSubmatch(msg)
@@ -72,7 +72,7 @@ func (c CuteImage) getImageForMessage(msg string) (string, string, error) {
 			} else {
 				imageUrl, err = c.getImage(counts[i], tags[i])
 			}
-			return matchingString, imageUrl, err
+			return nick + matchingString, imageUrl, err
 		}
 	}
 	log.Println("error determining image type for " + msg)
