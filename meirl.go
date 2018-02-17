@@ -57,13 +57,13 @@ func processPrivmsg(linesToSend chan<- string, nick string, channel string, msg 
 		}
 
 		if sendTo != "" {
-			go sendImage(linesToSend, sendTo, msg, nick, cuteImage)
+			go sendImage(linesToSend, sendTo, msg, cuteImage)
 		}
 	}
 }
 
-func sendImage(linesToSend chan<- string, sendTo string, msg string, nick string, img CuteImage) {
-	str, url, err := img.getImageForMessage(msg, nick)
+func sendImage(linesToSend chan<- string, sendTo string, msg string, img CuteImage) {
+	str, url, err := img.getImageForMessage(msg)
 	var newMsg string
 	if err != nil {
 		newMsg = "PRIVMSG " + sendTo + " " + ":error fetching image"

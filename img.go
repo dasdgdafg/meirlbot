@@ -2,13 +2,13 @@ package main
 
 import (
 	"encoding/xml"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type CuteImage struct {
@@ -29,10 +29,20 @@ const baseUrl = "https://gelbooru.com/index.php?page=dapi&s=post&q=index&tags="
 
 var urlShortener = regexp.MustCompile("^(.*)/[^/^\\.]+(\\.[^/]+)$")
 
-var regexes = []*regexp.Regexp{regexp.MustCompile("(?i)me( irl)"),
-	regexp.MustCompile("(?i)me( on the (?:left|right))"),
-	regexp.MustCompile("(?i)me( being lewd)"),
-	regexp.MustCompile("(?i)me( with tags) (.*)")}
+// use _ to represent where colors are allowed
+var baseStrings = []string{"(?i)_m_e(_ _i_r_l_)_",
+	"(?i)_m_e(_ _o_n_ _t_h_e_ _(?:l_e_f_t|r_i_g_h_t)_)",
+	"(?i)_m_e(_ _b_e_i_n_g_ _l_e_w_d_)",
+	"(?i)_m_e(_ _w_i_t_h_ _t_a_g_s_) (.*)"}
+
+// color codes (or bold/italics)
+var colors = "(?:\\d{0,2}(,\\d{1,2})?||)*"
+var colorsReg = regexp.MustCompile(colors)
+
+var regexes = []*regexp.Regexp{regexp.MustCompile(strings.Replace(baseStrings[0], "_", colors, -1)),
+	regexp.MustCompile(strings.Replace(baseStrings[1], "_", colors, -1)),
+	regexp.MustCompile(strings.Replace(baseStrings[2], "_", colors, -1)),
+	regexp.MustCompile(strings.Replace(baseStrings[3], "_", colors, -1))}
 
 // these must match the order of the regexes
 var tags = []string{"solo score:>5 rating:questionable",
@@ -46,44 +56,30 @@ var alwaysTags = "loli"
 // to avoid looking up the count each time. it would be better to get these once and cache instead of hard coding
 var counts = []int{10000, 3500, 1500, 0}
 
-// ignore color codes (or bold/italics)
-var colors = regexp.MustCompile("(\\d{0,2}(,\\d{1,2})?||)")
-var maybeColors = regexp.MustCompile("[\\d,]") // less strict
-
-func confusingRegex(first int, second int) *regexp.Regexp {
-	s := fmt.Sprintf("(?:[\\d,]*[^\\d,]){%v}([\\d,]*(?:[^\\d,][\\d,]*){%v})", first, second)
-	return regexp.MustCompile(s)
-}
-
 // returns (matching string, image url)
-func (c CuteImage) getImageForMessage(msg string, nick string) (string, string, error) {
-	plainMsg := colors.ReplaceAllString(msg, "")
+func (c CuteImage) getImageForMessage(msg string) (string, string, error) {
 	for i, reg := range regexes {
-		if reg.MatchString(plainMsg) {
-			matches := reg.FindStringSubmatch(plainMsg)
+		if reg.MatchString(msg) {
+			matches := reg.FindStringSubmatch(msg)
 			matchingString := matches[1]
 			imageUrl := ""
 			var err error
 			// use matches[2] (user specified tags) if there are no tags
 			if tags[i] == "" && len(matches) > 2 {
-				imageUrl, err = c.getImage(counts[i], matches[2])
+				// strip colors out of the tags
+				tagString := colorsReg.ReplaceAllString(matches[2], "")
+				imageUrl, err = c.getImage(counts[i], tagString)
 			} else {
 				imageUrl, err = c.getImage(counts[i], tags[i])
 			}
-			// strip out control stuff, then count how many real characters to ignore/use
-			ignore := reg.FindStringIndex(maybeColors.ReplaceAllString(msg, ""))[0] + 2 // add 2 to ignore the "me"
-			coloredReg := confusingRegex(ignore, len(matchingString))
-			// find the part of the original string that has the match in it
-			coloredMatchingString := coloredReg.FindStringSubmatch(msg)[1]
-			return nick + coloredMatchingString, imageUrl, err
+			return matchingString, imageUrl, err
 		}
 	}
-	log.Println("error determining image type for " + plainMsg)
+	log.Println("error determining image type for " + msg)
 	return "", "", nil
 }
 
 func (c CuteImage) checkForMatch(msg string) bool {
-	msg = colors.ReplaceAllString(msg, "")
 	for _, reg := range regexes {
 		if reg.MatchString(msg) {
 			return true
