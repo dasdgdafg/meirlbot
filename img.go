@@ -48,9 +48,10 @@ var counts = []int{10000, 3500, 1500, 0}
 
 // ignore color codes (or bold/italics)
 var colors = regexp.MustCompile("(\\d{0,2}(,\\d{1,2})?||)")
+var maybeColors = regexp.MustCompile("[\\d,]") // less strict
 
-func confusingRegex(n int) *regexp.Regexp {
-	s := fmt.Sprintf("(?:[\\d,]*[ a-zA-Z]){2}([\\d,]*(?:[ a-zA-Z][\\d,]*){%v})", n)
+func confusingRegex(first int, second int) *regexp.Regexp {
+	s := fmt.Sprintf("(?:[\\d,]*[^\\d,]){%v}([\\d,]*(?:[^\\d,][\\d,]*){%v})", first, second)
 	return regexp.MustCompile(s)
 }
 
@@ -69,7 +70,10 @@ func (c CuteImage) getImageForMessage(msg string, nick string) (string, string, 
 			} else {
 				imageUrl, err = c.getImage(counts[i], tags[i])
 			}
-			coloredReg := confusingRegex(len(matchingString))
+			// strip out control stuff, then count how many real characters to ignore/use
+			ignore := reg.FindStringIndex(maybeColors.ReplaceAllString(msg, ""))[0] + 2 // add 2 to ignore the "me"
+			coloredReg := confusingRegex(ignore, len(matchingString))
+			// find the part of the original string that has the match in it
 			coloredMatchingString := coloredReg.FindStringSubmatch(msg)[1]
 			return nick + coloredMatchingString, imageUrl, err
 		}

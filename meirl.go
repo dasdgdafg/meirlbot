@@ -43,7 +43,7 @@ func processPrivmsg(linesToSend chan<- string, nick string, channel string, msg 
 		if channel[:1] == "#" {
 			lastPost := cooldown[chanNick]
 			since := time.Since(lastPost)
-			if since >= 5*time.Minute || true {
+			if since >= 5*time.Minute {
 				sendTo = channel
 				cooldown[chanNick] = time.Now()
 			} else {
