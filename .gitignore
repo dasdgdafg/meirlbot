@@ -2,3 +2,4 @@ logs
 password.txt
 *.state
 *.exe
+*.exe~
