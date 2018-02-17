@@ -33,7 +33,7 @@ var urlShortener = regexp.MustCompile("^(.*)/[^/^\\.]+(\\.[^/]+)$")
 var baseStrings = []string{"(?i)_m_e(_ _i_r_l_)_",
 	"(?i)_m_e(_ _o_n_ _t_h_e_ _(?:l_e_f_t|r_i_g_h_t)_)",
 	"(?i)_m_e(_ _b_e_i_n_g_ _l_e_w_d_)",
-	"(?i)_m_e(_ _w_i_t_h_ _t_a_g_s_) (.*)"}
+	"(?i)_m_e(_ _w_i_t_h_ _t_a_g_s_) (.+)"}
 
 // color codes (or bold/italics)
 var colors = "(?:\\d{0,2}(,\\d{1,2})?||)*"
